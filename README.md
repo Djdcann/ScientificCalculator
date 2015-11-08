@@ -16,3 +16,7 @@ Completed:
 
   
 For Questions on using fragments, I uploaded a brief example on them on my github account  
+
+This is what it looks like. We need to give the TextView a visible box and a cursor to show where the user is.  
+The keyboard should also be shifted downward  
+  <img width="330" alt="screen shot 2015-11-08 at 2 06 54 pm" src="https://cloud.githubusercontent.com/assets/11150496/11022032/2f5b110c-8622-11e5-9442-5816607427a5.png">
