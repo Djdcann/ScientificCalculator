@@ -1,0 +1,35 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="0dp"
+    android:paddingRight="0dp"
+    android:paddingTop="0dp"
+    android:paddingBottom="0dp" tools:context=".BasicCalculator"
+    android:weightSum="1">
+
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="h"
+        android:backgroundTint="@android:color/darker_gray"
+        android:textSize="40dp"
+        android:layout_margin="16dp"
+        android:id="@+id/user_input_text_view" />
+
+    <fragment
+        android:layout_width="wrap_content"
+        android:layout_height="520dp"
+        android:layout_marginLeft="-360dp"
+        android:name="com.example.gagnej3.scientificcalculator.SimpleCalulator"
+        android:id="@+id/fragment_stanard_calc"
+        android:layout_marginBottom="-20dp"
+        android:layout_marginTop="100dp"
+        android:layout_gravity="center_horizontal"
+        tools:layout="@layout/fragment_simple_calculator" />
+
+
+
+
+</LinearLayout>
+

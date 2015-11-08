@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clear_button">AC</string>
+    <string name="divide_button">&#247;</string>
+    <string name="multiply_button">&#215;</string>
+    <string name="delete_button_str">del</string>
+    <string name="seven_button_str">7</string>
+    <string name="eight_button_str">8</string>
+    <string name="nine_button_str">9</string>
+    <string name="minus_button_str">&#8722;</string>
+    <string name="four_button_str">4</string>
+    <string name="five_button_str">5</string>
+    <string name="six_button_str">6</string>
+    <string name="plus_button_str">+</string>
+    <string name="one_button_str">1</string>
+    <string name="two_button_str">2</string>
+    <string name="three_button_str">3</string>
+    <string name="parentheses_button_str">()</string>
+    <string name="zero_button_str">0</string>
+    <string name="decimal_button_str">.</string>
+    <string name="plus_minus_button_str">+/-</string>
+    <string name="equal_button_str">=</string>
+
+</resources>
