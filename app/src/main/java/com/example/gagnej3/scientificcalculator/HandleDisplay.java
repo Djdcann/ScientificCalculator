@@ -4,7 +4,8 @@ import android.util.Log;
 import android.widget.TextView;
 
 /**
- *
+ * Need to figure out how to undo the plus/minus command
+ * Then need to define the enter key
  * Someone needs to find a way to set the textView to blank rather than a space. The issue is
  * inside the checkSpecialCase method
  * Created by gagnej3 on 10/31/15.
@@ -12,7 +13,11 @@ import android.widget.TextView;
 public class HandleDisplay {
     private int openParenCount = 0;
     private int closeParenCount = 0;
+
+    private String incorrectFormat = "Incorrect Format";
     private String dbugMSG = "dbug HandleDisplay";
+
+    private boolean isCurrentlyNegative = false;
 
     //Updates the text box to be displayed
     public TextView updateTextView(TextView currentDisplay, String newValue) {
@@ -26,9 +31,8 @@ public class HandleDisplay {
         return updatedDisplay;
     }
 
-
     private TextView checkSpecialCase(TextView currentDisplay, String command){
-        TextView updateDisplay = currentDisplay;
+        TextView updateDisplay;
         //Gets the text displayed on the screen
         String currentText = currentDisplay.getText().toString();
 
@@ -43,7 +47,6 @@ public class HandleDisplay {
         }catch (Exception e){
             Log.d(dbugMSG, "LastCharSTR out of range");
         }
-
         //need to figure out how to set the text view to null rather than just a space: " "
         if(command.equals("delete")) {
             updatedText = handleDeleteValues(currentText,lastChar);
@@ -52,35 +55,169 @@ public class HandleDisplay {
             updatedText = handleParentheses(command,lastChar, currentText);
         }
         //Same issue as above code block
-        else if( command.equals("clear")) {
-            updatedText = " ";
+        else if(command.equals("clear")) {
+            updatedText = handleClearAll();
         }
         //Places "0." in the string if decimal is pressed with: an empty string or after an operator
-        else if(  isDecimalPoint(command) &&  (currentText.equals(" ") || isOperator(lastChar)) ){
-            updatedText = currentText + "0.";
+        else if(isDecimalPoint(command)){
+            updatedText = handleDecimalPoint(command,lastChar,currentText);
+        }
+        else if (command.equals("+-")){
+            updatedText = handlePlusMinus(currentText,lastChar);
         }
 
         //This will instantiate a new UserInput to handle the mathematical input
         //This should come before checking for a duplicate operator. "=" should end the current operation
         else if (command.equals("=")) {
             if(isOperator(lastChar)){
-                updatedText = currentText + "\n Incorrect Format";
+                updatedText = currentText + "\n" + incorrectFormat;
             }
+
             //CALL THE EXECUTE COMMAND METHOD
+            openParenCount = 0;
+            closeParenCount = 0;
         }
-
-        else if (isDuplicateOperator(command, currentText)){
-            updatedText = currentText;
+        else if(isOperator(command)){
+            updatedText = handleOperator(command,currentText,lastChar);
         }
-
-        //If there are no special action associated with the specified command
-        //all we need to do is append the string
+        //If there are no special action associated with the specified command, all we need to do is append the string
         else{
-            updatedText= currentText + command;
+            if (isCloseParen(lastChar) && isDigit(command)){
+                updatedText = currentText + "*" + command;
+            }
+            else
+                updatedText= currentText + command;
         }
 
+        updateDisplay = currentDisplay;
         updateDisplay.setText(updatedText);
         return updateDisplay;
+    }
+
+    private String handleOperator(String command, String currentText, String lastChar){
+        String updatedText;
+
+        if(isDecimalPoint(lastChar)){
+            updatedText = currentText;
+        }
+        else if (isOperator(lastChar) || isOpenParen(lastChar)){
+            updatedText = currentText;
+        }
+        //Does some last minute handling to the parentheses formatting
+        else if(isCurrentlyNegative && !isDigit(command) && !isParenthesis(lastChar) && !isDecimalPoint(lastChar)){
+            updatedText= currentText + ")" + command;
+            closeParenCount++;
+            isCurrentlyNegative = false;
+        }
+        else{
+            updatedText = currentText + command;
+        }
+
+        return updatedText;
+    }
+
+    /**
+     * Resets the paren count values to zero on all clear. returns a blank string.
+     * @return updated text
+     */
+    private String handleClearAll(){
+        String updatedText = " ";
+        openParenCount = 0;
+        closeParenCount = 0;
+
+        return updatedText;
+    }
+
+    /**
+     * Decides what to do depending on when the decimal point is pressed.
+     * @param command The button that was pressed by the user
+     * @param lastChar The last char in the current display
+     * @param currentText Current string
+     * @return Updated text
+     */
+    private String handleDecimalPoint(String command, String lastChar, String currentText){
+        String updatedText;
+
+        if(isCloseParen(lastChar)){
+            updatedText = currentText + "*(0.";
+            openParenCount++;
+        }
+        else if(containsDecimal(currentText, lastChar)){
+            updatedText = currentText;
+        }
+        else if((currentText.equals(" ") || isOperator(lastChar) || isParenthesis(lastChar))){
+            updatedText = currentText + "0.";
+        }
+        //don't update it if the command and the last char are both decimals
+        else if (isDecimalPoint(command) && isDecimalPoint(lastChar))
+            updatedText = currentText;
+
+        else
+            updatedText = currentText + ".";
+
+
+        return updatedText;
+    }
+
+    /**
+     * Decides what to append to the textBox depending on what is displayed when the plus minus
+     * symbol is pressed
+     * @param currentText the current text being displayed
+     * @param lastChar last char of the text displayed
+     * @return the updated value
+     */
+    private String handlePlusMinus(String currentText, String lastChar){
+        String updatedText = " ";
+
+        //When the string is empty
+        if (lastChar.equals(" ")){
+            updatedText = currentText + "(-";
+            openParenCount++;
+            isCurrentlyNegative = true;
+        }
+
+        //Undo the negative sign if the number is already negative
+        else if(isNegativeNumber(currentText)){
+            Log.d(dbugMSG, "attempting to undo negative");
+            updatedText = undoNegative(currentText);
+        }
+
+        //Inserts "(-" in front of a number that the user already typed in
+        else if (isDigit(lastChar) || isDecimalPoint(lastChar)) {
+
+            //First break the string in two parts depending on where the '-' needs to go
+            String firstHalf;
+            String secondHalf;
+
+            for (int i = currentText.length() - 1; i >= 0; i--) {
+
+                //Once you are at the beginning of the number
+                if (!isDigit(currentText.charAt(i)) && !isDecimalPoint(currentText.charAt(i))) {
+
+                    //Substring: begin index is inclusive, ending index is exclusive
+                    firstHalf = currentText.substring(0, i + 1);
+                    secondHalf = currentText.substring(i + 1, currentText.length());
+                    updatedText = firstHalf + "(-" + secondHalf;
+
+                    //Remember we need to keep track of the openParenCount
+                    openParenCount++;
+                    isCurrentlyNegative = true;
+                    break;
+                }
+            }
+        }
+
+        //Don't let user put neg signs randomly
+        else if(lastChar.equals(")") || lastChar.equals("-")) {
+            updatedText = currentText;
+        }
+        else {
+            updatedText = currentText + "(-";
+            isCurrentlyNegative = true;
+            openParenCount++;
+        }
+
+        return updatedText;
     }
 
     /**
@@ -90,14 +227,23 @@ public class HandleDisplay {
      * @return Returns the updated value after deletion
      */
     private String handleDeleteValues(String currentText, String lastChar){
-        String updatedText = " ";
+        String updatedText;
 
-        //if(currentText.contains("Incorrect Format")){
-            //This needs to be defined
-        //}
-        if(currentText.length() == 1 || currentText.equals(null)) { //If string is already null, we can't remove any values
+        //Removes the "Incorrect Format" message when the delete key is pressed
+        if(currentText.contains(incorrectFormat)){
+            updatedText = currentText.substring(0, (currentText.length() - incorrectFormat.length() - 1));
+        }
+
+        else if(currentText.length() == 1 || currentText.equals("")) { //If string is already null, we can't remove any values
             updatedText = " ";
         }
+
+        //If current number is neg need to update when '-' is deleted
+        else if(lastChar.equals("-") && isCurrentlyNegative){
+            isCurrentlyNegative = false;
+            updatedText = currentText.substring(0, currentText.length() - 1);
+        }
+
         //Because we use a count to track what paren. we need, this must be updated when using the delete key
         else if (isParenthesis(lastChar)){
             if(lastChar.equals("(")){
@@ -108,8 +254,19 @@ public class HandleDisplay {
                 updatedText = currentText.substring(0, currentText.length() - 1);
             }
         }
-        else{   //The updated text keeps all except the final letter of the initial string
+
+        //The updated text keeps all except the final letter of the initial string
+        else{
             updatedText = currentText.substring(0, currentText.length() - 1);
+        }
+
+        //updates the value tracking negative numbers if the user goes backwards on input
+        if(isDigit(lastChar)){
+            if (isNegativeNumber(currentText)){
+                isCurrentlyNegative = true;
+            }
+            else
+                isCurrentlyNegative = false;
         }
 
         return updatedText;
@@ -123,20 +280,28 @@ public class HandleDisplay {
      * @return returns the updated string based on the when the parenthesis button was pressed
      */
     private String handleParentheses(String command, String lastChar, String currentText){
-        String updatedText = "";
+        String updatedText;
         //We need an opening Paren for these situations
-        if(currentText.equals(" ") || isOperator(lastChar)) {
+        if (currentText.equals(" ") || isOperator(lastChar)) {
             updatedText = currentText + "(";
             openParenCount++;
         }
         //Last value is a digit and all paren groups are paired
-        else if ((isDigit(lastChar) || isParenthesis(lastChar)) && openParenCount == closeParenCount) {
+        else if ((isDigit(lastChar) || isCloseParen(lastChar)) && openParenCount == closeParenCount) {
             updatedText = currentText + "*(";
             openParenCount++;
         }
-        else if((isDigit(lastChar) || isParenthesis(lastChar) )&& (closeParenCount < openParenCount)){
+        else if((isDigit(lastChar) || isCloseParen(lastChar) ) && (closeParenCount < openParenCount)){
             updatedText = currentText + ")";
             closeParenCount++;
+        }
+        else if(isOpenParen(lastChar)){
+            updatedText = currentText + "(";
+            openParenCount++;
+        }
+        //Do not let user place parenthesis if the last values is a decimal point
+        else if(isDecimalPoint(lastChar)){
+            updatedText = currentText;
         }
         else
             updatedText = currentText + ")";
@@ -144,40 +309,121 @@ public class HandleDisplay {
         return updatedText;
     }
 
-    /**
-     * Will prevent the user form entering multiple operators
-     * @param command Contains the value of the button pressed by the user
-     * @param currentText Contains the current content being displayed in the text view
-     * @return returns true if the last value of Current text is an Operator and the command is an operator
-     *          returns false otherwise
-     */
-    public boolean isDuplicateOperator(String command, String currentText) {
-        char lastChar = currentText.charAt(currentText.length() - 1);
-        String lastCharStr = "" + lastChar;
 
-        //consecutive digits are fine
-        if(isDigit(command)){
+    /**
+     * This should only be used when handling the +- key on the calculator
+     * @param currentText
+     * @return
+     */
+    private String undoNegative(String currentText){
+        String updatedText;
+        String firstHalf;
+        String secondHalf;
+        boolean isNotNegative = false;
+        int i;
+
+        for(i = currentText.length() - 1; i>= 0 ; i-- ){
+            if((!isDigit(currentText.charAt(i)) && !isDecimalPoint(currentText.charAt(i)) ) && currentText.charAt(i) == '-'){
+                break;
+            }
+            else if (isDigit(currentText.charAt(i)) || isDecimalPoint(currentText.charAt(i))){
+                continue;
+            }
+            //If there is something else before the negative sign, sometype of error happened
+            else{
+                updatedText = currentText;
+                return updatedText;
+            }
+        }
+        //Breaks on i == index of negative
+        //must get rid of "(-" that comes along with every negative number
+        firstHalf = currentText.substring(0, i - 1);
+        secondHalf = currentText.substring(i+1, currentText.length());
+        openParenCount--;
+        isCurrentlyNegative = false;
+        updatedText = firstHalf + secondHalf;
+        return updatedText;
+    }
+
+    /**
+     * This should only be used if the +- number is pressed!
+     * @param currentText
+     * @return
+     */
+    private boolean isNegativeNumber(String currentText){
+
+        //If there is no number at end of the string there is nothing to be done here
+        if(!isDigit(currentText.charAt(currentText.length() - 1)) && !isDecimalPoint(currentText.charAt(currentText.length() - 1)))
             return false;
-        }
-        //We don't want multiple decimal points
-        if(isDecimalPoint(command) && isDecimalPoint(lastCharStr)){
-            return true;
-        }
-        //We don't want multiple operators
-        if(isOperator(command) && isOperator(lastCharStr)){
-            return true;
+
+        for (int i = currentText.length() - 1; i >=0; i--){
+
+            if(currentText.charAt(i) == '-' ){
+                return true;
+            }
+
+            else if(isDigit(currentText.charAt(i)) || isDecimalPoint(currentText.charAt(i))){
+                continue;
+            }
+            else
+                return false;
         }
         return false;
     }
 
+    private boolean containsDecimal(String currentText, String lastChar){
+        //If the current value isn't a number or decimal, it cant contain a decimal
+        if(!isDigit(lastChar) && !isDecimalPoint(lastChar)){
+            return false;
+        }
+
+        int size = currentText.length();
+        for (int i = size - 1; i >=0; i--){
+            char temp = currentText.charAt(i);
+
+            if(isDigit(temp)){
+                continue;
+            }
+            else if(isDecimalPoint(temp)){
+                return true;
+            }
+            else
+                return false;
+        }
+        return false;
+    }
+    private boolean isOpenParen(String command){
+        if(command.equals("("))
+            return true;
+
+        return false;
+    }
+    private boolean isCloseParen(String command){
+        if(command.equals(")"))
+            return true;
+
+        return false;
+    }
     private boolean isDecimalPoint(String command){
         if(command.charAt(0) == 46)
             return true;
         else
             return false;
     }
+    private boolean isDecimalPoint(char command){
+        if(command == 46)
+            return true;
+        else
+            return false;
+    }
     private boolean isDigit(String command){
         if(command.charAt(0) >=48 && command.charAt(0) <=57)
+            return true;
+        else
+            return false;
+    }
+    private boolean isDigit(char command){
+        if(command >=48 && command <=57)
             return true;
         else
             return false;
@@ -192,19 +438,18 @@ public class HandleDisplay {
 
     //Checks if the current command is an operator or not
     public boolean isOperator (String command){
-        boolean isOp = false;
+        boolean isOp;
         if(isDigit(command)){
             isOp =  false;
         } else if(isDecimalPoint(command)){
             isOp  = false;
         } else if (isParenthesis(command)){
             isOp = false;
-        } else if(command.equals(null) || command.equals(" ")){
+        } else if(command.equals("") || command.equals(" ")){
             return false;
         } else {
             isOp = true;
         }
         return isOp;
     }
-
 }
