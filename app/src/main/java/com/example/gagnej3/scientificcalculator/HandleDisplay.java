@@ -11,13 +11,16 @@ import android.widget.TextView;
  * Created by gagnej3 on 10/31/15.
  */
 public class HandleDisplay {
+
     private int openParenCount = 0;
     private int closeParenCount = 0;
+    private int lastIndex = 0;
 
-    private String incorrectFormat = "Incorrect Format";
     private String dbugMSG = "dbug HandleDisplay";
+    private String mSolution;
 
     private boolean isCurrentlyNegative = false;
+    private boolean isDisplayingAnswer = false;
 
     //Updates the text box to be displayed
     public TextView updateTextView(TextView currentDisplay, String newValue) {
@@ -36,7 +39,7 @@ public class HandleDisplay {
         //Gets the text displayed on the screen
         String currentText = currentDisplay.getText().toString();
 
-        String updatedText = " ";
+        String updatedText;
 
         //This is only checked in the isOperator method, which is handled properly if it isn't initialized
         String lastChar = "";
@@ -69,13 +72,7 @@ public class HandleDisplay {
         //This will instantiate a new UserInput to handle the mathematical input
         //This should come before checking for a duplicate operator. "=" should end the current operation
         else if (command.equals("=")) {
-            if(isOperator(lastChar)){
-                updatedText = currentText + "\n" + incorrectFormat;
-            }
-
-            //CALL THE EXECUTE COMMAND METHOD
-            openParenCount = 0;
-            closeParenCount = 0;
+            updatedText = handleEqualsButton(currentText, lastChar);
         }
         else if(isOperator(command)){
             updatedText = handleOperator(command,currentText,lastChar);
@@ -92,6 +89,40 @@ public class HandleDisplay {
         updateDisplay = currentDisplay;
         updateDisplay.setText(updatedText);
         return updateDisplay;
+    }
+
+    /**
+     * Decides what to do when the "=" button is pressed
+     * @param currentText the current text being displayed in the text view
+     * @param lastChar last value in the string
+     * @return the proper output depending on the user format
+     */
+    private String handleEqualsButton(String currentText, String lastChar){
+        String updatedText;
+
+        if(isOperator(lastChar)){
+            updatedText = currentText + "\n" + "Incorrect Format";
+        }
+        else{
+            if(openParenCount > closeParenCount){
+                int difference = openParenCount - closeParenCount;
+                for (int i = 0; i < difference; i++){
+                    currentText += ")";
+                }
+            }
+
+            ComputeInput computeInput = new ComputeInput();
+            String solution;
+            solution = computeInput.computeSolution(currentText);
+            mSolution = solution;
+            updatedText = currentText + '\n' + "= "  + solution;
+        }
+
+        openParenCount = 0;
+        closeParenCount = 0;
+        lastIndex = currentText.length();
+        isDisplayingAnswer = true;
+        return updatedText;
     }
 
     private String handleOperator(String command, String currentText, String lastChar){
@@ -124,6 +155,7 @@ public class HandleDisplay {
         String updatedText = " ";
         openParenCount = 0;
         closeParenCount = 0;
+        isDisplayingAnswer = false;
 
         return updatedText;
     }
@@ -169,8 +201,12 @@ public class HandleDisplay {
     private String handlePlusMinus(String currentText, String lastChar){
         String updatedText = " ";
 
+        if(isDisplayingAnswer){
+            updatedText = currentText;
+        }
+
         //When the string is empty
-        if (lastChar.equals(" ")){
+        else if (lastChar.equals(" ")){
             updatedText = currentText + "(-";
             openParenCount++;
             isCurrentlyNegative = true;
@@ -229,11 +265,10 @@ public class HandleDisplay {
     private String handleDeleteValues(String currentText, String lastChar){
         String updatedText;
 
-        //Removes the "Incorrect Format" message when the delete key is pressed
-        if(currentText.contains(incorrectFormat)){
-            updatedText = currentText.substring(0, (currentText.length() - incorrectFormat.length() - 1));
+        if(isDisplayingAnswer){
+            updatedText = currentText.substring(0,lastIndex);
+            isDisplayingAnswer = false;
         }
-
         else if(currentText.length() == 1 || currentText.equals("")) { //If string is already null, we can't remove any values
             updatedText = " ";
         }
@@ -309,11 +344,10 @@ public class HandleDisplay {
         return updatedText;
     }
 
-
     /**
      * This should only be used when handling the +- key on the calculator
-     * @param currentText
-     * @return
+     * @param currentText current text being displayed on the TextView
+     * @return a string without the negative number
      */
     private String undoNegative(String currentText){
         String updatedText;
@@ -346,9 +380,9 @@ public class HandleDisplay {
     }
 
     /**
-     * This should only be used if the +- number is pressed!
-     * @param currentText
-     * @return
+     * This should only be used if the +- number is pressed! Checks if the most recent number is negative or not
+     * @param currentText Current text being displayed on the TextView
+     * @return true if the number is negative
      */
     private boolean isNegativeNumber(String currentText){
 
