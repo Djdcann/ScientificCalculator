@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">"Scientific Calculator "</string>
+    <string name="action_settings">action settings</string>
+    <string name="title_activity_test">Test</string>
 
     <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="title_activity_test_fragment">TestFragment</string>
+    <string name="title_activity_calculator_main_rotated">CalculatorMainRotated</string>
 </resources>

@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 /**
  * This class handles all the button widget declarations for the SimpleCalculator Fragment
@@ -19,31 +20,46 @@ public class SimpleCalulator extends Fragment implements View.OnClickListener {
 
     Communicator communicator;
 
+    public boolean isSimpleFunction = true;
+
     //All the buttons needed for the standard calculator view
-    private Button one;
-    private Button two;
-    private Button three;
-    private Button four;
-    private Button five;
-    private Button six;
-    private Button seven;
-    private Button eight;
-    private Button nine;
-    private Button zero;
-    private Button allClear;
-    private Button divide;
-    private Button multiply;
-    private Button deleteOne;
-    private Button minus;
-    private Button plus;
-    private Button parentheses;
-    private Button equalSign;
-    private Button plusMinus;
-    private Button decimal;
+    protected Button one;
+    protected Button two;
+    protected Button three;
+    protected Button four;
+    protected Button five;
+    protected Button six;
+    protected Button seven;
+    protected Button eight;
+    protected Button nine;
+    protected Button zero;
+    protected Button allClear;
+    protected Button divide;
+    protected Button multiply;
+    protected Button deleteOne;
+    protected Button minus;
+    protected Button plus;
+    protected Button parentheses;
+    protected Button equalSign;
+    protected Button plusMinus;
+    protected Button decimal;
 
-    private String pressedValue;
-    private char pressedCharVal;
+    private TextView mDisplayBox;
 
+    public SimpleCalulator(){
+
+    }
+
+    //Will allow the textview in the main to have a valid address
+    public TextView getmDisplayBox() {
+        return mDisplayBox;
+    }
+
+    //will allow us to update the textview from the main
+    public void setmDisplayBox(TextView display){
+        String text = display.getText().toString();
+        mDisplayBox.setText(text);
+    }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -51,6 +67,8 @@ public class SimpleCalulator extends Fragment implements View.OnClickListener {
 
         //NEED THIS FOR REFERENCE TO THE CURRENT ACTIVITY
         communicator = (Communicator) getActivity();
+
+        mDisplayBox = (TextView) getActivity().findViewById(R.id.text_view_user_input);
 
         one = (Button) getActivity().findViewById(R.id.one_button);
         one.setOnClickListener(this);
@@ -111,6 +129,8 @@ public class SimpleCalulator extends Fragment implements View.OnClickListener {
 
         decimal = (Button) getActivity().findViewById(R.id.decimal_button);
         decimal.setOnClickListener(this);
+
+
     }
 
     @Override
@@ -118,10 +138,12 @@ public class SimpleCalulator extends Fragment implements View.OnClickListener {
         return inflater.inflate(R.layout.fragment_simple_calculator,container,false);
     }
 
-
-
     @Override
     public void onClick(View v) {
+        selectPressedButton(v);
+    }
+
+    protected void selectPressedButton(View v){
         //Checks the id of what just got clicked
         switch(v.getId()) {
             case R.id.one_button:
@@ -173,31 +195,21 @@ public class SimpleCalulator extends Fragment implements View.OnClickListener {
                 communicator.getStringData("+");
                 break;
             case R.id.parentheses_button:
-                /*if(openParenCount == closeParenCount) {
-                    openParenCount++;
-                    communicator.getStringData("(");
-                    //isFirstParen = false;
-                    Log.d("dbug", "First Paren was pressed");
-                } else {
-                    communicator.getStringData(")");
-                    closeParenCount++;
-                    //isFirstParen = true;
-                    Log.d("dbug", "Second Paren was pressed");
-                }*/
                 communicator.getStringData("()");
                 break;
             case R.id.equal_button:
                 communicator.getStringData("=");
-                Log.d("dbug SimpleCalculator", "enter was pressed");
                 break;
             case R.id.plus_minus_button:
                 communicator.getStringData("+-");
-                Log.d("dbug", "plus/minus was pressed");
                 break;
             case R.id.decimal_button:
                 communicator.getStringData(".");
-                Log.d("dbug", "decimal was pressed");
+                break;
+            default:
+                isSimpleFunction = false;
                 break;
         }
     }
+
 }
